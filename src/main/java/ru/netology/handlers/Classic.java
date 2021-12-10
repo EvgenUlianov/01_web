@@ -1,7 +1,5 @@
 package ru.netology.handlers;
 
-import ru.netology.Request;
-
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
