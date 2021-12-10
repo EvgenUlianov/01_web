@@ -86,6 +86,7 @@ public class Server implements Runnable{
                 Handler handler = handlerSet.getValue();
                 if(handler.isSuitableCase(path)){
                     handler.handle(path, filePath, out);
+                    break;
                 }
             }
 
