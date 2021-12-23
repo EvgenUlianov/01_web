@@ -15,11 +15,6 @@ public class Classic implements Handler{
     }
 
     @Override
-    public int priority() {
-        return 1;
-    }
-
-    @Override
     public void handle(String path, Path filePath, BufferedOutputStream out) {
         String mimeType = null;
         String template = null;

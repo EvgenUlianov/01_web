@@ -13,11 +13,6 @@ public class StandartHandler implements Handler{
     }
 
     @Override
-    public int priority() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
     public void handle(String path, Path filePath, BufferedOutputStream out) {
         long length = 0;
         try {
