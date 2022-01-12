@@ -1,71 +1,48 @@
 package ru.netology;
 
-import ru.netology.handlers.Classic;
-import ru.netology.handlers.Handler;
-import ru.netology.handlers.Handler404;
-import ru.netology.handlers.StandartHandler;
-
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.Path;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class Server implements Runnable{
+public class Server {
 
-    private final Socket socket;
+  final static  private int numberOfTreads = 64;
 
-    public Server(Socket socket) {
-        this.socket = socket;
+  public void listen() {
+
+    final ExecutorService threadPool = Executors.newFixedThreadPool(numberOfTreads);
+
+    try (final ServerSocket serverSocket = new ServerSocket(9999)) {
+      while (true) {
+
+        Socket socket = serverSocket.accept();
+        ServersExecutor serversExecutor = new ServersExecutor(socket);
+
+        threadPool.execute(serversExecutor);
+
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
     }
+  }
 
-    @Override
-    public void run() {
-        try (
-                socket;
-                final BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                final BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())
-        ) {
-            // read only request line for simplicity
-            // must be in form GET /path HTTP/1.1
-            final String requestLine = in.readLine();
-            if (requestLine == null)
-                return;
-            final String[] parts = requestLine.split(" ");
+  // SingleTone ++
 
-            if (parts.length != 3) {
-                // just close socket
-                return;
-            }
-            final String path = parts[1];
+  private Server(){
+  }
 
-            Handler classic = new Classic();
-            Handler handler404 = new Handler404();
-            Handler standartHandler = new StandartHandler();
-            final Path filePath = Path.of(".", "public", path);
-            if (classic.isSuitableCase(path)) {
-                classic.handle(path, filePath, out);
-            } if (handler404.isSuitableCase(path)) {
-                handler404.handle(path, filePath, out);
-            } else {
-                standartHandler.handle(path, filePath, out);
-            }
+  private static class Holder {
+    public static final Server SERVER = new Server();
+  }
 
-            // сохранил, чтобы потом можно было сюда вернуться и вспомнить рефлексию, если понадобится
-//            Map<Integer, Handler> handlers = new TreeMap<>();
-//            Set<Class<? extends Handler>> subTypes = new Reflections("ru.netology.handlers").getSubTypesOf(Handler.class);
-//            for (Class clazz : subTypes) {
-//                try {
-//                    Handler handler = (Handler) clazz.getDeclaredConstructor().newInstance();
-//                    handlers.put(handler.priority(), handler);
-//                } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-//                    e.printStackTrace();
-//                }
-//            }
+  public static Server get()  {
+    return Server.Holder.SERVER;
+  }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+  // SingleTone --
+
 }
+
+
