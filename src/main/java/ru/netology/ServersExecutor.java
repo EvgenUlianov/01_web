@@ -1,5 +1,7 @@
 package ru.netology;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import ru.netology.handlers.*;
 
 import java.io.BufferedOutputStream;
@@ -7,7 +9,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.List;
 
 public class ServersExecutor implements Runnable{
 
@@ -29,13 +33,15 @@ public class ServersExecutor implements Runnable{
             final String requestLine = in.readLine();
             if (requestLine == null)
                 return;
-            final String[] parts = requestLine.split(" ");
 
-            if (parts.length != 3) {
+            char [] separators = {' ', '?'};
+            List<NameValuePair> nameValuePairs =  URLEncodedUtils.parse(requestLine, Charset.defaultCharset(), separators);//forName("UTF-8"));
+
+            if (nameValuePairs.size() < 2) {
                 // just close socket
                 return;
             }
-            final String path = parts[1];
+            final String path = nameValuePairs.get(1).getName();
 
             final Path filePath = Path.of(".", "public", path);
 
