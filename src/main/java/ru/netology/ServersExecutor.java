@@ -53,6 +53,8 @@ public class ServersExecutor implements Runnable{
                 final Path filePath = Path.of(".", "public", path);
                 HandlersManager.get().handle(path, filePath, out);
             } else if (method.equals(POST)){
+
+
                 Map<String, String> pathParams = new HashMap<>();
                 for (int i = 2; i < nameValuePairs.size() - 1; i++) {
                     pathParams.put(nameValuePairs.get(i).getName(),nameValuePairs.get(i).getValue());
@@ -63,25 +65,32 @@ public class ServersExecutor implements Runnable{
                 boolean addingToHeaders = true;
                 char [] separatorsForHeadersBody = {'\n'};
                 String requestBody = in.readLine();
-                while(requestBody != null){
-                    if (addingToHeaders && requestBody.isEmpty())
-                        addingToHeaders = false;
+                int a =1;
+                while(requestBody != null && !requestBody.isEmpty()){
+                        if (addingToHeaders && requestBody.isEmpty())
+                            addingToHeaders = false;
+                        List<NameValuePair> headersBodyValuePairs =  URLEncodedUtils.parse(requestBody, Charset.defaultCharset(), separatorsForHeadersBody);
+                        if (addingToHeaders){
+                            for (NameValuePair headersBodyValuePair:headersBodyValuePairs) {
+                                builderHeaders.append(headersBodyValuePair.toString());
+                                builderHeaders.append('\n');
+                            }
+                        } else {
+                            for (NameValuePair headersBodyValuePair:headersBodyValuePairs) {
+                                builderBody.append(headersBodyValuePair.toString());
+                                builderBody.append('\n');
+                            }
+                        }
+                        if(!socket.isClosed()){
+                            requestBody = in.readLine();
+                            System.out.println(++a);
+                        } else{
+                            break;
+                        }
 
-                    List<NameValuePair> headersBodyValuePairs =  URLEncodedUtils.parse(requestBody, Charset.defaultCharset(), separatorsForHeadersBody);
-                    if (addingToHeaders){
-                        for (NameValuePair headersBodyValuePair:headersBodyValuePairs) {
-                            builderHeaders.append(headersBodyValuePair.toString());
-                            builderHeaders.append('\n');
-                        }
-                    } else {
-                        for (NameValuePair headersBodyValuePair:headersBodyValuePairs) {
-                            builderBody.append(headersBodyValuePair.toString());
-                            builderBody.append('\n');
-                        }
                     }
-                    requestBody = in.readLine();
 
-                }
+
                 PostHandlersManager.get().handle(path, pathParams, builderHeaders.toString(), builderBody.toString(), out);
             }
 

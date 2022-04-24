@@ -21,18 +21,22 @@ public class PostStandartHandler implements PostHandler {
         resultBuilder.append("Content-Type: text");
         resultBuilder.append("\r\n");
         resultBuilder.append("\r\n");
-        //        for (Map.Entry<String, String> header: headers.entrySet()) {
-//            resultBuilder.append(header.getKey());
-//            resultBuilder.append(": ");
-//            resultBuilder.append(header.getValue());
-//            resultBuilder.append("\r\n");
-//
-//        }
-//        resultBuilder.append("test");
-//        resultBuilder.append("\r\n");
-        resultBuilder.append(requestBody);
+        resultBuilder.append(headers);
+        for (Map.Entry<String, String> header: pathParams.entrySet()) {
+            resultBuilder.append(header.getKey());
+            resultBuilder.append(": ");
+            resultBuilder.append(header.getValue());
+            resultBuilder.append("\r\n");
+
+        }
+        //        resultBuilder.append("test");
+        //        resultBuilder.append("\r\n");
+        if(!requestBody.isEmpty()){
+            resultBuilder.append(requestBody);
+        }
         try {
-            out.write(resultBuilder.toString().getBytes());
+            out.write(resultBuilder.toString().getBytes());//
+            System.out.println(resultBuilder.toString());
             out.flush();
             return;
         } catch (IOException e) {
