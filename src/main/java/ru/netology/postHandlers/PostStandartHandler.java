@@ -1,5 +1,7 @@
 package ru.netology.postHandlers;
 
+import ru.netology.Request;
+
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,25 +16,37 @@ public class PostStandartHandler implements PostHandler {
     }
 
     @Override
-    public void handle(String path, Map<String, String> pathParams, String headers, String requestBody, BufferedOutputStream out) {
+    public void handle(Request request, BufferedOutputStream out) {
         StringBuilder resultBuilder = new StringBuilder();
         resultBuilder.append("HTTP/1.1 200 OK");
         resultBuilder.append("\r\n");
         resultBuilder.append("Content-Type: text");
         resultBuilder.append("\r\n");
         resultBuilder.append("\r\n");
-        resultBuilder.append(headers);
-        for (Map.Entry<String, String> header: pathParams.entrySet()) {
+        resultBuilder.append("============ Querry params: ============");
+        resultBuilder.append("\r\n");
+        for (Map.Entry<String, String> header: request.getQuerryParams().entrySet()) {
             resultBuilder.append(header.getKey());
             resultBuilder.append(": ");
             resultBuilder.append(header.getValue());
             resultBuilder.append("\r\n");
-
+        }
+        resultBuilder.append("\r\n");
+        resultBuilder.append("=============== Headers: ===============");
+        resultBuilder.append("\r\n");
+        for (Map.Entry<String, String> header: request.getHeaders().entrySet()) {
+            resultBuilder.append(header.getKey());
+            resultBuilder.append(": ");
+            resultBuilder.append(header.getValue());
+            resultBuilder.append("\r\n");
         }
         //        resultBuilder.append("test");
         //        resultBuilder.append("\r\n");
-        if(!requestBody.isEmpty()){
-            resultBuilder.append(requestBody);
+        if(!request.bodyIsEmpty()){
+            resultBuilder.append("\r\n");
+            resultBuilder.append("================= Body: =================");
+            resultBuilder.append("\r\n");
+            resultBuilder.append(request.getBody());
         }
         try {
             out.write(resultBuilder.toString().getBytes());//

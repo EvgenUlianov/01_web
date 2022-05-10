@@ -2,19 +2,15 @@ package ru.netology;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import ru.netology.handlers.*;
 import ru.netology.postHandlers.PostHandlersManager;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ServersExecutor implements Runnable{
 
@@ -55,43 +51,45 @@ public class ServersExecutor implements Runnable{
             } else if (method.equals(POST)){
 
 
-                Map<String, String> pathParams = new HashMap<>();
-                for (int i = 2; i < nameValuePairs.size() - 1; i++) {
-                    pathParams.put(nameValuePairs.get(i).getName(),nameValuePairs.get(i).getValue());
-                }
+                Request request = new Request(path);
 
-                StringBuilder builderHeaders = new StringBuilder();
+//                Map<String, String> pathParams = new HashMap<>();
+                for (int i = 2; i < nameValuePairs.size() - 1; i++) {
+                    request.setQuerryParam(nameValuePairs.get(i).getName(),nameValuePairs.get(i).getValue());
+//                    System.out.printf("%d. %s \n",i, nameValuePairs.get(i).toString());
+                }
+                System.out.println("//");
+
+//                StringBuilder builderHeaders = new StringBuilder();
                 StringBuilder builderBody = new StringBuilder();
                 boolean addingToHeaders = true;
                 char [] separatorsForHeadersBody = {'\n'};
-                String requestBody = in.readLine();
+//                char [] separatorsForHeadersBody = {':'};
+                NameValuePair requestNextHeader = inReadHeader(in);
                 int a =1;
-                while(requestBody != null && !requestBody.isEmpty()){
-                        if (addingToHeaders && requestBody.isEmpty())
-                            addingToHeaders = false;
-                        List<NameValuePair> headersBodyValuePairs =  URLEncodedUtils.parse(requestBody, Charset.defaultCharset(), separatorsForHeadersBody);
-                        if (addingToHeaders){
-                            for (NameValuePair headersBodyValuePair:headersBodyValuePairs) {
-                                builderHeaders.append(headersBodyValuePair.toString());
-                                builderHeaders.append('\n');
-                            }
-                        } else {
-                            for (NameValuePair headersBodyValuePair:headersBodyValuePairs) {
-                                builderBody.append(headersBodyValuePair.toString());
-                                builderBody.append('\n');
-                            }
-                        }
-                        if(!socket.isClosed()){
-                            requestBody = in.readLine();
-                            System.out.println(++a);
-                        } else{
+                while(requestNextHeader != null
+                        && !requestNextHeader.getName().isEmpty()){// && !requestBody.isEmpty()
+                    request.setHeader(requestNextHeader.getName(), requestNextHeader.getValue());
+                    if(!socket.isClosed() && in.ready()){
+                        try {
+                            requestNextHeader = inReadHeader(in);
+//                                requestBody = in.readLine();
+                            if (requestNextHeader != null)
+                                System.out.printf("%d. %s \n",a++, requestNextHeader.toString());
+                        } catch  (IOException e) {
+                            System.out.println("Exception readLine");
+                            e.printStackTrace();
                             break;
                         }
-
+                    } else{
+                        System.out.println("Breacked");
+                        break;
                     }
 
+                }
+                request.setBody(inReadBody(in, request.getContentLength()));
 
-                PostHandlersManager.get().handle(path, pathParams, builderHeaders.toString(), builderBody.toString(), out);
+                PostHandlersManager.get().handle(request, out);
             }
 
             // сохранил, чтобы потом можно было сюда вернуться и вспомнить рефлексию, если понадобится
@@ -110,4 +108,93 @@ public class ServersExecutor implements Runnable{
             e.printStackTrace();
         }
     }
+
+    private NameValuePair inReadHeader(BufferedReader in) throws IOException{
+        String key;
+        String value;
+
+        ArrayList<Character> characterArrayKey = new ArrayList<>();
+        ArrayList<Character> characterArrayValue = new ArrayList<>();
+        boolean addToKey = true;
+        boolean addToValue = false;
+        final char separator = ':';
+
+        char nextChar = (char) in.read();
+        if (nextChar ==-1)
+            return null;
+        while (nextChar !=-1
+                && nextChar!= '\n'){
+
+
+            if (!addToKey && !addToValue && nextChar != separator)
+                addToValue = true;
+            if (addToKey && nextChar == separator)
+                addToKey = false;
+
+            if (addToKey)
+                characterArrayKey.add(nextChar);
+            if (addToValue)
+                characterArrayValue.add(nextChar);
+            nextChar = (char) in.read();
+        }
+        if (characterArrayKey.isEmpty()
+                && characterArrayValue.isEmpty())
+            return null;
+        if (characterArrayKey.size() == 1
+                && characterArrayKey.get(0) == '\r'
+                && characterArrayValue.isEmpty())
+            return null;
+
+        char [] charArrayKey = new char[characterArrayKey.size()];
+        for (int i = 0; i < characterArrayKey.size(); i++)
+            charArrayKey[i] = characterArrayKey.get(i);
+        key = String.valueOf(charArrayKey);
+        char [] charArrayValue = new char[characterArrayValue.size()];
+        for (int i = 0; i < characterArrayValue.size(); i++)
+            charArrayValue[i] = characterArrayValue.get(i);
+        value = String.valueOf(charArrayValue);
+        return new BasicNameValuePair(key, parseURL(value));
+
+    }
+
+    private String inReadBody(BufferedReader in, int contentLength) throws IOException{
+        String requestBody;
+        if (contentLength == 0)
+            return "";
+        ArrayList<Character> characterArray = new ArrayList<>();
+        char nextChar = (char) in.read();
+        int index = 0;
+        while (nextChar !=-1){
+            characterArray.add(nextChar);
+            index++;
+            if(index == contentLength)
+                break;
+            nextChar = (char) in.read();
+        }
+        char [] charArray = new char[characterArray.size()];
+        for (int i = 0; i < characterArray.size(); i++)
+            charArray[i] = characterArray.get(i);
+        requestBody = String.valueOf(charArray);
+        return requestBody;
+    }
+
+    private String parseURL(String unparsed){
+        final char [] separators = {'\n'};
+        List<NameValuePair> headersBodyValuePairs =  URLEncodedUtils.parse(unparsed, Charset.defaultCharset(), separators);
+        StringBuilder builder = new StringBuilder();
+
+        boolean isFirst = true;
+        for (NameValuePair headersBodyValuePair:headersBodyValuePairs) {
+            if (isFirst){
+                isFirst= false;
+            }
+            else{
+                builder.append('\n');
+            }
+            builder.append(headersBodyValuePair.toString());
+        }
+        return  builder.toString();
+    }
+
+
 }

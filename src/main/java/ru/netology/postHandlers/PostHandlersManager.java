@@ -1,6 +1,7 @@
 package ru.netology.postHandlers;
 
 import lombok.Getter;
+import ru.netology.Request;
 import ru.netology.handlers.Classic;
 import ru.netology.handlers.Handler404;
 
@@ -15,10 +16,10 @@ public class PostHandlersManager {
 
     private final List<PostHandler> handlers;
 
-    public void handle(String path, Map<String, String> pathParams, String headers, String requestBody, BufferedOutputStream out){
+    public void handle(Request request, BufferedOutputStream out){
         for (PostHandler handler: handlers)
-            if (handler.isSuitableCase(path)) {
-                handler.handle(path, pathParams, headers, requestBody, out);
+            if (handler.isSuitableCase(request.getPath())) {
+                handler.handle(request, out);
                 break;
             }
     }
