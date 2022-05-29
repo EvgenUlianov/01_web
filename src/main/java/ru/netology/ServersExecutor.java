@@ -8,6 +8,8 @@ import ru.netology.postHandlers.PostHandlersManager;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
@@ -36,6 +38,7 @@ public class ServersExecutor implements Runnable{
                 return;
 
             char [] separators = {' ', '?', '&'};
+
             List<NameValuePair> nameValuePairs =  URLEncodedUtils.parse(requestLine, Charset.defaultCharset(), separators);//forName("UTF-8"));
 
             if (nameValuePairs.size() < 2) {
@@ -53,29 +56,22 @@ public class ServersExecutor implements Runnable{
 
                 Request request = new Request(path);
 
-//                Map<String, String> pathParams = new HashMap<>();
-                for (int i = 2; i < nameValuePairs.size() - 1; i++) {
-                    request.setQuerryParam(nameValuePairs.get(i).getName(),nameValuePairs.get(i).getValue());
-//                    System.out.printf("%d. %s \n",i, nameValuePairs.get(i).toString());
+                for (NameValuePair nameValuePair: nameValuePairs) {
+                    if (nameValuePair.getValue() != null)
+                    request.setQuerryParam(nameValuePair);
                 }
                 System.out.println("//");
 
-//                StringBuilder builderHeaders = new StringBuilder();
-                StringBuilder builderBody = new StringBuilder();
-                boolean addingToHeaders = true;
-                char [] separatorsForHeadersBody = {'\n'};
-//                char [] separatorsForHeadersBody = {':'};
                 NameValuePair requestNextHeader = inReadHeader(in);
                 int a =1;
                 while(requestNextHeader != null
-                        && !requestNextHeader.getName().isEmpty()){// && !requestBody.isEmpty()
-                    request.setHeader(requestNextHeader.getName(), requestNextHeader.getValue());
+                        && !requestNextHeader.getName().isEmpty()){
+                    request.setHeader(requestNextHeader);
                     if(!socket.isClosed() && in.ready()){
                         try {
                             requestNextHeader = inReadHeader(in);
-//                                requestBody = in.readLine();
                             if (requestNextHeader != null)
-                                System.out.printf("%d. %s \n",a++, requestNextHeader.toString());
+                                System.out.printf("%d. %s \n",a++, requestNextHeader);
                         } catch  (IOException e) {
                             System.out.println("Exception readLine");
                             e.printStackTrace();
@@ -87,7 +83,14 @@ public class ServersExecutor implements Runnable{
                     }
 
                 }
-                request.setBody(inReadBody(in, request.getContentLength()));
+                String requestBodyString = inReadBody(in, request.getContentLength());
+                if (request.getContentType() == Request.ContentType.X_WWW_FORM_URLENCODE){
+                    char [] bodySeparators = {'&'};
+                    request.setPostParams(URLEncodedUtils.parse(requestBodyString, Charset.defaultCharset(), bodySeparators));//forName("UTF-8"));
+
+                } else{
+                    request.setBody(requestBodyString);
+                }
 
                 PostHandlersManager.get().handle(request, out);
             }
@@ -120,10 +123,7 @@ public class ServersExecutor implements Runnable{
         final char separator = ':';
 
         char nextChar = (char) in.read();
-        if (nextChar ==-1)
-            return null;
-        while (nextChar !=-1
-                && nextChar!= '\n'){
+        while (nextChar != '\n'){
 
 
             if (!addToKey && !addToValue && nextChar != separator)
@@ -164,7 +164,7 @@ public class ServersExecutor implements Runnable{
         ArrayList<Character> characterArray = new ArrayList<>();
         char nextChar = (char) in.read();
         int index = 0;
-        while (nextChar !=-1){
+        while (true){
             characterArray.add(nextChar);
             index++;
             if(index == contentLength)
