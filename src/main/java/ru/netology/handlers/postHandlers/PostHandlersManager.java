@@ -1,24 +1,21 @@
-package ru.netology.postHandlers;
+package ru.netology.handlers.postHandlers;
 
 import lombok.Getter;
 import ru.netology.Request;
-import ru.netology.handlers.Classic;
-import ru.netology.handlers.Handler404;
+import ru.netology.handlers.Handler;
 
 import java.io.BufferedOutputStream;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 public class PostHandlersManager {
 
-    private final List<PostHandler> handlers;
+    private final List<Handler> handlers;
 
     public void handle(Request request, BufferedOutputStream out){
-        for (PostHandler handler: handlers)
-            if (handler.isSuitableCase(request.getPath())) {
+        for (Handler handler: handlers)
+            if (handler.isSuitableCase(request)) {
                 handler.handle(request, out);
                 break;
             }

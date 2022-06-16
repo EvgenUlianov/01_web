@@ -1,4 +1,8 @@
-package ru.netology.handlers;
+package ru.netology.handlers.getHandlers;
+
+import ru.netology.FileManager;
+import ru.netology.Request;
+import ru.netology.handlers.Handler;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -6,16 +10,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 
-public class Classic implements Handler{
+public class Classic implements Handler {
 
 
     @Override
-    public boolean isSuitableCase(String path) {
-        return path.equals("/classic.html");
+    public boolean isSuitableCase(Request request) {
+        return request.getPath().equals("/classic.html");
     }
 
     @Override
-    public void handle(String path, Path filePath, BufferedOutputStream out) {
+    public void handle(Request request, BufferedOutputStream out) {
+        Path filePath = FileManager.get().getFilePath(request);
+
         String mimeType = null;
         String template = null;
         try {

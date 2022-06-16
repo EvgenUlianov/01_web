@@ -1,14 +1,15 @@
-package ru.netology.postHandlers;
+package ru.netology.handlers.postHandlers;
 
 import ru.netology.Request;
+import ru.netology.handlers.Handler;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 
-public class PostStandartHandler implements PostHandler {
+public class PostStandartHandler implements Handler {
 
     @Override
-    public boolean isSuitableCase(String path) {
+    public boolean isSuitableCase(Request request) {
         return true;
     }
 

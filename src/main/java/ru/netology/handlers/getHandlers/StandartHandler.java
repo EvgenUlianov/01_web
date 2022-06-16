@@ -1,19 +1,25 @@
-package ru.netology.handlers;
+package ru.netology.handlers.getHandlers;
+
+import ru.netology.FileManager;
+import ru.netology.Request;
+import ru.netology.handlers.Handler;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class StandartHandler implements Handler{
+public class StandartHandler implements Handler {
 
     @Override
-    public boolean isSuitableCase(String path) {
+    public boolean isSuitableCase(Request request) {
         return true;
     }
 
     @Override
-    public void handle(String path, Path filePath, BufferedOutputStream out) {
+    public void handle(Request request, BufferedOutputStream out) {
+        Path filePath = FileManager.get().getFilePath(request);
+
         long length = 0;
         try {
             length = Files.size(filePath);
