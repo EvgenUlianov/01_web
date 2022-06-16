@@ -1,10 +1,11 @@
 package ru.netology.handlers;
 
+import ru.netology.Request;
+
 import java.io.BufferedOutputStream;
-import java.nio.file.Path;
 
 
 public interface Handler {
-    boolean isSuitableCase(String path);
-    void handle(String path, Path filePath, BufferedOutputStream out);
+    boolean isSuitableCase(Request request);
+    void handle(Request request, BufferedOutputStream out);
 }

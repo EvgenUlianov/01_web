@@ -1,11 +1,13 @@
-package ru.netology.handlers;
+package ru.netology.handlers.getHandlers;
+
+import ru.netology.Request;
+import ru.netology.handlers.Handler;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 
-public class Handler404 implements Handler{
+public class Handler404 implements Handler {
 
     private final List<String> validPaths = List.of(
             "/index.html",
@@ -18,15 +20,18 @@ public class Handler404 implements Handler{
             "/forms.html",
             "/classic.html",
             "/events.html",
-            "/events.js");
+            "/events.js",
+            "/messages");
 
     @Override
-    public boolean isSuitableCase(String path) {
-        return !validPaths.contains(path);
+    public boolean isSuitableCase(Request request) {
+        return !validPaths.contains(request.getPath());
     }
 
     @Override
-    public void handle(String path, Path filePath, BufferedOutputStream out){
+    public void handle(Request request, BufferedOutputStream out){
+//        Path filePath = FileManager.get().getFilePath(request);
+
         try {
             out.write((
                     """
